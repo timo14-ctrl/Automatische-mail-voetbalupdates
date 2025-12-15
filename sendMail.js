@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Zet Jupiler Pro League als eerste, daarna de andere competities
+// Competities met Jupiler Pro League eerst
 const competitions = [
   { name: "Jupiler Pro League", id: 4341, color: "#ffcc00" },
   { name: "Eredivisie", id: 4337, color: "#da291c" },
@@ -13,7 +13,7 @@ const competitions = [
   { name: "Serie A", id: 4332, color: "#0066b3" }
 ];
 
-// Functie om HTML per competitie te genereren
+// HTML voor een competitie met alle wedstrijden van laatste speeldag
 async function getLeagueHTML(league) {
   try {
     const res = await fetch(`https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`);
@@ -21,12 +21,10 @@ async function getLeagueHTML(league) {
     const data = await res.json();
     if (!data.events) return "";
 
-    // Bepaal laatste speeldag
     const lastRound = Math.max(
       ...data.events.filter(e => e.intRound).map(e => parseInt(e.intRound))
     );
 
-    // Alle wedstrijden van die speeldag
     const matches = data.events.filter(m => parseInt(m.intRound) === lastRound);
     if (matches.length === 0) return "";
 
@@ -53,7 +51,7 @@ ${league.name} – Speeldag ${lastRound}
   }
 }
 
-// Bouw complete e-mail HTML
+// Bouw de volledige e-mail HTML
 async function buildEmailHTML() {
   let leaguesHTML = "";
   for (const league of competitions) {
@@ -86,7 +84,7 @@ Automatisch verzonden via GitHub Actions • TheSportsDB
 </html>`;
 }
 
-// Verzenden mail
+// Mail verzenden
 async function sendMail() {
   try {
     const html = await buildEmailHTML();
