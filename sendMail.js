@@ -13,7 +13,7 @@ const competitions = [
   { name: "Serie A", id: 4332, color: "#0066b3" }
 ];
 
-// HTML voor een competitie met alle wedstrijden van laatste speeldag
+// HTML voor een competitie met alle wedstrijden van de laatste gespeelde dag
 async function getLeagueHTML(league) {
   try {
     const res = await fetch(`https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`);
@@ -21,17 +21,21 @@ async function getLeagueHTML(league) {
     const data = await res.json();
     if (!data.events) return "";
 
-    const lastRound = Math.max(
-      ...data.events.filter(e => e.intRound).map(e => parseInt(e.intRound))
-    );
+    // Laatste gespeelde datum bepalen
+    const lastDate = data.events
+      .map(e => e.dateEvent)
+      .filter(d => d)
+      .sort()
+      .reverse()[0];
 
-    const matches = data.events.filter(m => parseInt(m.intRound) === lastRound);
+    // Alle wedstrijden op die datum
+    const matches = data.events.filter(m => m.dateEvent === lastDate);
     if (matches.length === 0) return "";
 
     let html = `<tr>
 <td style="padding:15px 0;">
 <h2 style="margin:0;padding:10px;background:${league.color};color:#ffffff;border-radius:5px;text-align:center;font-family:Arial,sans-serif;">
-${league.name} – Speeldag ${lastRound}
+${league.name} – ${lastDate}
 </h2>
 <table width="100%" cellpadding="6" cellspacing="0" style="font-family:Arial,sans-serif;margin-top:5px;">`;
 
@@ -51,7 +55,7 @@ ${league.name} – Speeldag ${lastRound}
   }
 }
 
-// Bouw de volledige e-mail HTML
+// Bouw volledige e-mail HTML
 async function buildEmailHTML() {
   let leaguesHTML = "";
   for (const league of competitions) {
@@ -114,3 +118,4 @@ async function sendMail() {
 
 // Start script
 sendMail();
+
