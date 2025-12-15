@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
+// Zet Jupiler Pro League als eerste, daarna de andere competities
 const competitions = [
   { name: "Jupiler Pro League", id: 4341, color: "#ffcc00" },
   { name: "Eredivisie", id: 4337, color: "#da291c" },
@@ -20,10 +21,12 @@ async function getLeagueHTML(league) {
     const data = await res.json();
     if (!data.events) return "";
 
+    // Bepaal laatste speeldag
     const lastRound = Math.max(
       ...data.events.filter(e => e.intRound).map(e => parseInt(e.intRound))
     );
 
+    // Alle wedstrijden van die speeldag
     const matches = data.events.filter(m => parseInt(m.intRound) === lastRound);
     if (matches.length === 0) return "";
 
@@ -65,7 +68,7 @@ async function buildEmailHTML() {
 <tr>
 <td style="background:#0b3d91;color:#ffffff;text-align:center;border-radius:10px 10px 0 0;">
 <h1 style="margin:0;padding:10px;">⚽ VOETBAL ACTUEEL</h1>
-<p style="margin:5px 0 0;font-size:14px;">Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend. Ontdek het hieronder!</p>
+<p style="margin:5px 0 10px;font-size:14px;">Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend. Ontdek het hieronder!</p>
 </td>
 </tr>
 
@@ -113,4 +116,3 @@ async function sendMail() {
 
 // Start script
 sendMail();
-
