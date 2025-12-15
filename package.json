@@ -1,0 +1,10 @@
+{
+  "name": "voetbal-mail",
+  "version": "1.0.0",
+  "description": "Automatische voetbalnieuwsbrief",
+  "main": "sendMail.js",
+  "dependencies": {
+    "node-fetch": "^2.6.9",
+    "nodemailer": "^6.9.8"
+  }
+}
