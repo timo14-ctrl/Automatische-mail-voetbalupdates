@@ -3,14 +3,14 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Clubs met vaste logo-URL's
+// Clubs met werkende PNG-logo's
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/en/5/5e/Standard_Liège_logo.svg" },
-  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/en/4/4e/PSV_logo.svg" },
-  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_2016.svg" },
-  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg" },
-  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" },
-  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/2/29/Olympique_Marseille_logo.svg" }
+  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Standard_Li%C3%A8ge_logo.svg/100px-Standard_Li%C3%A8ge_logo.svg.png" },
+  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/PSV_logo.svg/100px-PSV_logo.svg.png" },
+  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f9/Aston_Villa_FC_crest_2016.svg/100px-Aston_Villa_FC_crest_2016.svg.png" },
+  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/100px-Logo_of_AC_Milan.svg.png" },
+  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/100px-FC_Barcelona_%28crest%29.svg.png" },
+  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/2/29/Olympique_Marseille_logo.svg/100px-Olympique_Marseille_logo.svg.png" }
 ];
 
 // Functie om kleur te bepalen
@@ -127,8 +127,7 @@ async function sendMail() {
           <tr>
             <td style="padding:20px; color:#333;">
               <p style="margin:0; font-size:15px;">
-                Hey voetballiefhebber!  
-                Hier zijn de <strong>meest recente wedstrijden</strong> van jouw favoriete clubs.
+                Hey voetballiefhebber! Wat hebben jouw favoriete clubs afgelopen wedstrijd gedaan? Ontdek het hieronder.
               </p>
             </td>
           </tr>
