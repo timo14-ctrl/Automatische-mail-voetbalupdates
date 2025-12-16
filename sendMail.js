@@ -4,25 +4,27 @@ const nodemailer = require("nodemailer");
 const API_KEY = "123";
 
 const clubs = [
-  { name: "Standard", league: "Jupiler Pro League" },
+  { name: "Standard Liège", league: "Jupiler Pro League" },
+  { name: "PSV Eindhoven", league: "Eredivisie" },
   { name: "Aston Villa", league: "Premier League" },
   { name: "AC Milan", league: "Serie A" },
   { name: "FC Barcelona", league: "La Liga" },
-  { name: "Marseille", league: "Ligue 1" },
-  { name: "PSV", league: "Eredivisie" }
+  { name: "Olympique Marseille", league: "Ligue 1" }
 ];
 
 async function getLastMatchHTML(club) {
-  // 1️⃣ Zoek team ID
+  // 1️⃣ Zoek team ID en logo
   const teamRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
   );
   const teamData = await teamRes.json();
   if (!teamData.teams || teamData.teams.length === 0) return "";
 
-  const teamId = teamData.teams[0].idTeam;
+  const team = teamData.teams[0];
+  const teamId = team.idTeam;
+  const logo = team.strTeamBadge;
 
-  // 2️⃣ Haal laatste wedstrijd op
+  // 2️⃣ Laatste gespeelde wedstrijd
   const matchRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${teamId}`
   );
@@ -32,26 +34,49 @@ async function getLastMatchHTML(club) {
   const match = matchData.results[0];
 
   return `
-    <h2>${club.name} (${club.league})</h2>
-    <p>
-      ${match.strHomeTeam} ${match.intHomeScore}
-      -
-      ${match.intAwayScore} ${match.strAwayTeam}
-      <br>
-      <small>${match.dateEvent}</small>
-    </p>
+    <tr>
+      <td style="padding:20px; border-bottom:1px solid #eaeaea;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="70" valign="middle">
+              <img src="${logo}" alt="${club.name}" width="50" style="display:block;">
+            </td>
+            <td valign="middle">
+              <h3 style="margin:0; font-size:18px; color:#111;">
+                ${club.name}
+              </h3>
+              <p style="margin:4px 0 8px 0; color:#666; font-size:14px;">
+                ${club.league}
+              </p>
+              <p style="margin:0; font-size:16px; font-weight:bold;">
+                ${match.strHomeTeam} ${match.intHomeScore} - ${match.intAwayScore} ${match.strAwayTeam}
+              </p>
+              <p style="margin:4px 0 0 0; color:#999; font-size:12px;">
+                ${match.dateEvent}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   `;
 }
 
 async function sendMail() {
-  let content = "";
+  let clubBlocks = "";
 
   for (const club of clubs) {
-    content += await getLastMatchHTML(club);
+    clubBlocks += await getLastMatchHTML(club);
   }
 
-  if (!content) {
-    content = "<p>Geen wedstrijden gevonden.</p>";
+  if (!clubBlocks) {
+    clubBlocks = `
+      <tr>
+        <td style="padding:20px; text-align:center;">
+          Geen wedstrijden gevonden.
+        </td>
+      </tr>
+    `;
   }
 
   const transporter = nodemailer.createTransport({
@@ -69,17 +94,58 @@ async function sendMail() {
     to: process.env.EMAIL_TO,
     subject: "Dit zijn de laatste voetbaluitslagen van jouw clubs!",
     html: `
-      <h1>VOETBAL ACTUEEL</h1>
-      <p>
-        Hey voetballiefhebber!  
-        Hier zijn de meest recente wedstrijden van jouw favoriete clubs.
-      </p>
-      ${content}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Voetbal Actueel</title>
+</head>
+<body style="margin:0; padding:0; background:#f4f4f4; font-family:Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:30px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:6px; overflow:hidden;">
+          
+          <!-- HEADER -->
+          <tr>
+            <td style="background:#111; color:#ffffff; padding:24px;">
+              <h1 style="margin:0; font-size:26px;">⚽ VOETBAL ACTUEEL</h1>
+              <p style="margin:8px 0 0 0; font-size:14px; color:#cccccc;">
+                Jouw wekelijkse voetbalupdate
+              </p>
+            </td>
+          </tr>
+
+          <!-- INTRO -->
+          <tr>
+            <td style="padding:20px; color:#333;">
+              <p style="margin:0; font-size:15px;">
+                Hey voetballiefhebber!  
+                Hier zijn de <strong>meest recente wedstrijden</strong> van jouw favoriete clubs.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CLUBS -->
+          ${clubBlocks}
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f4f4f4; padding:16px; text-align:center; font-size:12px; color:#777;">
+              Deze mail wordt elke maandag automatisch verstuurd.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `
   });
 
-  console.log("Mail verzonden met laatste clubwedstrijden");
+  console.log("Professionele nieuwsbrief verzonden");
 }
 
 sendMail();
-
