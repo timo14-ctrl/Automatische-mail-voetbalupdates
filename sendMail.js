@@ -19,19 +19,26 @@ async function getLeagueHTML(league) {
   const data = await res.json();
   if (!data.events || data.events.length === 0) return "";
 
-  // 👉 laatste speeldag bepalen via LAATSTE strRound in de lijst
-  const rounds = data.events
-    .map(e => e.strRound)
-    .filter(r => r);
+  // Tel hoe vaak elke strRound voorkomt
+  const roundCount = {};
+  data.events.forEach(e => {
+    if (e.strRound) {
+      roundCount[e.strRound] = (roundCount[e.strRound] || 0) + 1;
+    }
+  });
 
+  const rounds = Object.keys(roundCount);
   if (rounds.length === 0) return "";
 
-  const lastRound = rounds[0]; // API komt gesorteerd terug (meest recent eerst)
+  // Neem de speeldag met de meeste wedstrijden
+  const bestRound = rounds.sort(
+    (a, b) => roundCount[b] - roundCount[a]
+  )[0];
 
-  const matches = data.events.filter(e => e.strRound === lastRound);
+  const matches = data.events.filter(e => e.strRound === bestRound);
   if (matches.length === 0) return "";
 
-  let html = `<h2>${league.name} - ${lastRound}</h2><ul>`;
+  let html = `<h2>${league.name} - ${bestRound}</h2><ul>`;
 
   matches.forEach(m => {
     html += `<li>${m.strHomeTeam} ${m.intHomeScore} - ${m.intAwayScore} ${m.strAwayTeam}</li>`;
@@ -68,12 +75,14 @@ async function sendMail() {
     subject: "Dit zijn de voetbaluitslagen van de voorbije speeldag!",
     html: `
       <h1>VOETBAL ACTUEEL</h1>
-      <p>Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend.</p>
+      <p>
+        Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend.
+      </p>
       ${content}
     `
   });
 
-  console.log("Mail verzonden met inhoud");
+  console.log("Mail verzonden met wedstrijden");
 }
 
 sendMail();
