@@ -10,7 +10,7 @@ const clubs = [
   { name: "Aston Villa", league: "Premier League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
   { name: "AC Milan", league: "Serie A", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
   { name: "FC Barcelona", league: "La Liga", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
-  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
+  { name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
 // Functie voor kleur van score
@@ -149,7 +149,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met volledige logo’s zichtbaar via GitHub in de root");
+  console.log("Nieuwsbrief verzonden met Olympique de Marseille toegevoegd en alle logo’s zichtbaar");
 }
 
 sendMail();
