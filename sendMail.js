@@ -3,51 +3,42 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Clubs met logo's via jouw GitHub repo (root)
+// Clubs met team ID, competitie en logo
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/standard.png" },
-  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/psv.png" },
-  { name: "Aston Villa", league: "Premier League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
-  { name: "AC Milan", league: "Serie A", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
-  { name: "FC Barcelona", league: "La Liga", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
-  { name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
+  { id: "133602", name: "Standard Liège", league: "Jupiler Pro League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/standard.png" },
+  { id: "1104", name: "PSV Eindhoven", league: "Eredivisie", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/psv.png" },
+  { id: "133604", name: "Aston Villa", league: "Premier League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
+  { id: "133738", name: "AC Milan", league: "Serie A", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
+  { id: "133739", name: "FC Barcelona", league: "La Liga", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
+  { id: "133701", name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Nieuwe robuuste functie voor scorekleur
-function getScoreColor(match, clubName) {
-  const homeTeam = match.strHomeTeam?.trim();
-  const awayTeam = match.strAwayTeam?.trim();
+// Functie om kleur van score te bepalen
+function getScoreColor(match, clubId) {
   const homeScore = parseInt(match.intHomeScore);
   const awayScore = parseInt(match.intAwayScore);
 
-  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // geen score bekend = zwart
+  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // score onbekend = zwart
 
   if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
-  if (homeTeam === clubName && homeScore > awayScore) return "#28a745"; // thuis gewonnen = groen
-  if (awayTeam === clubName && awayScore > homeScore) return "#28a745"; // uit gewonnen = groen
-
-  return "#dc3545"; // anders verlies = rood
+  if (match.idHomeTeam === clubId && homeScore > awayScore) return "#28a745"; // thuis gewonnen = groen
+  if (match.idAwayTeam === clubId && awayScore > homeScore) return "#28a745"; // uit gewonnen = groen
+  return "#dc3545"; // verlies = rood
 }
 
 async function getLastMatchHTML(club) {
-  const teamRes = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
-  );
-  const teamData = await teamRes.json();
-  if (!teamData.teams || teamData.teams.length === 0) return "";
-
-  const team = teamData.teams[0];
-  const teamId = team.idTeam;
-  const logo = club.logo || team.strTeamBadge || "https://via.placeholder.com/50";
-
+  // Haal laatste wedstrijden op
   const matchRes = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${teamId}`
+    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${club.id}`
   );
   const matchData = await matchRes.json();
   if (!matchData.results || matchData.results.length === 0) return "";
 
-  const match = matchData.results[0];
-  const color = getScoreColor(match, club.name);
+  // Zoek de laatste wedstrijd in de juiste competitie
+  const match = matchData.results.find(m => m.strLeague === club.league);
+  if (!match) return ""; // geen match in de competitie gevonden
+
+  const color = getScoreColor(match, club.id);
 
   return `
     <tr>
@@ -55,7 +46,7 @@ async function getLastMatchHTML(club) {
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td width="70" valign="middle">
-              <img src="${logo}" alt="${club.name}" width="50" style="display:block;">
+              <img src="${club.logo}" alt="${club.name}" width="50" style="display:block;">
             </td>
             <td valign="middle">
               <h3 style="margin:0; font-size:18px; color:#111;">${club.name}</h3>
@@ -154,7 +145,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met correcte kleuren en alle clubs zichtbaar");
+  console.log("Nieuwsbrief verzonden met correcte clubs, kleuren en Marseille toegevoegd");
 }
 
 sendMail();
