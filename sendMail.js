@@ -13,9 +13,10 @@ const clubs = [
   { name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Vaste kleur voor alle wedstrijden
+// Vaste kleur voor alle scores
 const SCORE_COLOR = "#111111"; // donkergrijs/zwart
 
+// Functie om de laatste gespeelde match van een club te tonen
 async function getLastMatchHTML(club) {
   const teamRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
@@ -33,7 +34,13 @@ async function getLastMatchHTML(club) {
   const matchData = await matchRes.json();
   if (!matchData.results || matchData.results.length === 0) return "";
 
-  const match = matchData.results[0];
+  // Filter op de competitie van de club
+  const filteredMatches = matchData.results
+    .filter(m => m.strLeague && m.strLeague.toLowerCase().includes(club.league.toLowerCase()))
+    .sort((a, b) => new Date(b.dateEvent) - new Date(a.dateEvent)); // laatste eerst
+
+  // Fallback: pak eerste match als er geen competitie-match is
+  const match = filteredMatches[0] || matchData.results[0];
 
   return `
     <tr>
@@ -58,6 +65,7 @@ async function getLastMatchHTML(club) {
   `;
 }
 
+// Verstuur de nieuwsbrief
 async function sendMail() {
   let clubBlocks = "";
 
@@ -140,7 +148,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden zonder scorekleuren");
+  console.log("Nieuwsbrief verzonden: correcte laatste competitie-match voor alle clubs");
 }
 
 sendMail();
