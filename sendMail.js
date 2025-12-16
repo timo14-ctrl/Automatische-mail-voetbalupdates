@@ -13,21 +13,8 @@ const clubs = [
   { name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Nieuwe robuuste functie voor scorekleur
-function getScoreColor(match, clubName) {
-  const homeTeam = match.strHomeTeam?.trim();
-  const awayTeam = match.strAwayTeam?.trim();
-  const homeScore = parseInt(match.intHomeScore);
-  const awayScore = parseInt(match.intAwayScore);
-
-  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // geen score bekend = zwart
-
-  if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
-  if (homeTeam === clubName && homeScore > awayScore) return "#28a745"; // thuis gewonnen = groen
-  if (awayTeam === clubName && awayScore > homeScore) return "#28a745"; // uit gewonnen = groen
-
-  return "#dc3545"; // anders verlies = rood
-}
+// Vaste kleur voor alle wedstrijden
+const SCORE_COLOR = "#111111"; // donkergrijs/zwart
 
 async function getLastMatchHTML(club) {
   const teamRes = await fetch(
@@ -47,7 +34,6 @@ async function getLastMatchHTML(club) {
   if (!matchData.results || matchData.results.length === 0) return "";
 
   const match = matchData.results[0];
-  const color = getScoreColor(match, club.name);
 
   return `
     <tr>
@@ -60,7 +46,7 @@ async function getLastMatchHTML(club) {
             <td valign="middle">
               <h3 style="margin:0; font-size:18px; color:#111;">${club.name}</h3>
               <p style="margin:4px 0 8px 0; color:#666; font-size:14px;">${club.league}</p>
-              <p style="margin:0; font-size:16px; font-weight:bold; color:${color};">
+              <p style="margin:0; font-size:16px; font-weight:bold; color:${SCORE_COLOR};">
                 ${match.strHomeTeam} ${match.intHomeScore} - ${match.intAwayScore} ${match.strAwayTeam}
               </p>
               <p style="margin:4px 0 0 0; color:#999; font-size:12px;">${match.dateEvent}</p>
@@ -154,7 +140,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met correcte kleuren en alle clubs zichtbaar");
+  console.log("Nieuwsbrief verzonden zonder scorekleuren");
 }
 
 sendMail();
