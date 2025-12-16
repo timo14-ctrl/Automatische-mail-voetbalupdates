@@ -12,33 +12,36 @@ const competitions = [
   { name: "Serie A", id: 4332 }
 ];
 
-// datum X dagen geleden
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d;
-}
-
 async function getLeagueHTML(league) {
   const res = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
   );
   const data = await res.json();
-  if (!data.events) return "";
+  if (!data.events || data.events.length === 0) return "";
 
-  const oneWeekAgo = daysAgo(7);
+  // Alleen afgewerkte wedstrijden
+  const finishedMatches = data.events.filter(
+    e => e.intHomeScore !== null && e.intAwayScore !== null
+  );
 
-  // ➜ alle matchen van de laatste 7 dagen
-  const matches = data.events.filter(e => {
-    if (!e.dateEvent) return false;
-    return new Date(e.dateEvent) >= oneWeekAgo;
-  });
+  if (finishedMatches.length === 0) return "";
 
-  if (matches.length === 0) return "";
+  // Meest recente speeldatum bepalen
+  const latestDate = finishedMatches
+    .map(e => e.dateEvent)
+    .sort()
+    .reverse()[0];
 
-  let html = `<h2>${league.name} – Wedstrijden van de voorbije speeldag</h2><ul>`;
+  // ALLE matchen van die speeldatum
+  const matchesOfMatchday = finishedMatches.filter(
+    e => e.dateEvent === latestDate
+  );
 
-  matches.forEach(m => {
+  if (matchesOfMatchday.length === 0) return "";
+
+  let html = `<h2>${league.name} – Wedstrijden van speeldag ${latestDate}</h2><ul>`;
+
+  matchesOfMatchday.forEach(m => {
     html += `<li>${m.strHomeTeam} ${m.intHomeScore} - ${m.intAwayScore} ${m.strAwayTeam}</li>`;
   });
 
@@ -54,7 +57,7 @@ async function sendMail() {
   }
 
   if (!content) {
-    content = "<p>Geen wedstrijden gespeeld in de voorbije week.</p>";
+    content = "<p>Geen wedstrijden gevonden.</p>";
   }
 
   const transporter = nodemailer.createTransport({
@@ -75,13 +78,13 @@ async function sendMail() {
       <h1>VOETBAL ACTUEEL</h1>
       <p>
         Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend.
+        Ontdek het hieronder!
       </p>
       ${content}
     `
   });
 
-  console.log("Mail verzonden met wedstrijden");
+  console.log("Mail verzonden met ALLE wedstrijden van de speeldag");
 }
 
 sendMail();
-
