@@ -50,7 +50,7 @@ async function getLastMatchHTML(club) {
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td width="70" valign="middle">
-              <img src="${logo}" alt="${club.name}" width="50" style="display:block; border-radius:50%;">
+              <img src="${logo}" alt="${club.name}" width="50" style="display:block;">
             </td>
             <td valign="middle">
               <h3 style="margin:0; font-size:18px; color:#111;">${club.name}</h3>
@@ -149,7 +149,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met logo’s via GitHub in de root");
+  console.log("Nieuwsbrief verzonden met volledige logo’s zichtbaar via GitHub in de root");
 }
 
 sendMail();
