@@ -3,17 +3,29 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
+// Clubs met vaste logo-URL's
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League" },
-  { name: "PSV Eindhoven", league: "Eredivisie" },
-  { name: "Aston Villa", league: "Premier League" },
-  { name: "AC Milan", league: "Serie A" },
-  { name: "FC Barcelona", league: "La Liga" },
-  { name: "Olympique Marseille", league: "Ligue 1" }
+  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/en/5/5e/Standard_Liège_logo.svg" },
+  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/en/4/4e/PSV_logo.svg" },
+  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_2016.svg" },
+  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg" },
+  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" },
+  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/2/29/Olympique_Marseille_logo.svg" }
 ];
 
+// Functie om kleur te bepalen
+function getScoreColor(match, clubName) {
+  const isHome = match.strHomeTeam === clubName;
+  const homeScore = parseInt(match.intHomeScore);
+  const awayScore = parseInt(match.intAwayScore);
+
+  if (homeScore === awayScore) return "#FFA500"; // oranje
+  if ((isHome && homeScore > awayScore) || (!isHome && awayScore > homeScore)) return "#28a745"; // groen
+  return "#dc3545"; // rood
+}
+
 async function getLastMatchHTML(club) {
-  // 1️⃣ Zoek team ID en logo
+  // Zoek team ID
   const teamRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
   );
@@ -22,9 +34,9 @@ async function getLastMatchHTML(club) {
 
   const team = teamData.teams[0];
   const teamId = team.idTeam;
-  const logo = team.strTeamBadge;
+  const logo = club.logo || team.strTeamBadge || "https://via.placeholder.com/50";
 
-  // 2️⃣ Laatste gespeelde wedstrijd
+  // Laatste gespeelde wedstrijd
   const matchRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${teamId}`
   );
@@ -32,28 +44,23 @@ async function getLastMatchHTML(club) {
   if (!matchData.results || matchData.results.length === 0) return "";
 
   const match = matchData.results[0];
+  const color = getScoreColor(match, club.name);
 
   return `
     <tr>
-      <td style="padding:20px; border-bottom:1px solid #eaeaea;">
+      <td style="padding:20px; border-bottom:1px solid #eaeaea; border-radius:6px;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td width="70" valign="middle">
-              <img src="${logo}" alt="${club.name}" width="50" style="display:block;">
+              <img src="${logo}" alt="${club.name}" width="50" style="display:block; border-radius:50%;">
             </td>
             <td valign="middle">
-              <h3 style="margin:0; font-size:18px; color:#111;">
-                ${club.name}
-              </h3>
-              <p style="margin:4px 0 8px 0; color:#666; font-size:14px;">
-                ${club.league}
-              </p>
-              <p style="margin:0; font-size:16px; font-weight:bold;">
+              <h3 style="margin:0; font-size:18px; color:#111;">${club.name}</h3>
+              <p style="margin:4px 0 8px 0; color:#666; font-size:14px;">${club.league}</p>
+              <p style="margin:0; font-size:16px; font-weight:bold; color:${color};">
                 ${match.strHomeTeam} ${match.intHomeScore} - ${match.intAwayScore} ${match.strAwayTeam}
               </p>
-              <p style="margin:4px 0 0 0; color:#999; font-size:12px;">
-                ${match.dateEvent}
-              </p>
+              <p style="margin:4px 0 0 0; color:#999; font-size:12px;">${match.dateEvent}</p>
             </td>
           </tr>
         </table>
