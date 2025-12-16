@@ -13,7 +13,7 @@ const competitions = [
   { name: "Serie A", id: 4332, color: "#0066b3" }
 ];
 
-// HTML voor een competitie met alle wedstrijden van de laatste gespeelde dag
+// HTML per competitie met alle wedstrijden van de laatste speeldag
 async function getLeagueHTML(league) {
   try {
     const res = await fetch(`https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`);
@@ -21,41 +21,46 @@ async function getLeagueHTML(league) {
     const data = await res.json();
     if (!data.events) return "";
 
-    // Laatste gespeelde datum bepalen
-    const lastDate = data.events
-      .map(e => e.dateEvent)
-      .filter(d => d)
-      .sort()
-      .reverse()[0];
+    // Bepaal de laatste ronde die een nummer heeft
+    const rounds = data.events
+      .filter(e => e.intRound)
+      .map(e => parseInt(e.intRound))
+      .filter(r => !isNaN(r));
 
-    // Alle wedstrijden op die datum
-    const matches = data.events.filter(m => m.dateEvent === lastDate);
+    if (rounds.length === 0) return "";
+
+    const lastRound = Math.max(...rounds);
+
+    // Alle wedstrijden van die ronde
+    const matches = data.events.filter(e => parseInt(e.intRound) === lastRound);
+
     if (matches.length === 0) return "";
 
     let html = `<tr>
 <td style="padding:15px 0;">
 <h2 style="margin:0;padding:10px;background:${league.color};color:#ffffff;border-radius:5px;text-align:center;font-family:Arial,sans-serif;">
-${league.name} – ${lastDate}
+${league.name} – Speeldag ${lastRound}
 </h2>
 <table width="100%" cellpadding="6" cellspacing="0" style="font-family:Arial,sans-serif;margin-top:5px;">`;
 
     matches.forEach(match => {
       html += `<tr>
 <td style="border-bottom:1px solid #ddd;padding:5px 0;">
-<strong>${match.strHomeTeam}</strong> ${match.intHomeScore} - ${match.intAwayScore} <strong>${match.strAwayTeam}</strong>
+${match.strHomeTeam} ${match.intHomeScore} - ${match.intAwayScore} ${match.strAwayTeam}
 </td>
 </tr>`;
     });
 
     html += `</table></td></tr>`;
     return html;
+
   } catch (err) {
     console.error("Fout bij league HTML:", league.name, err);
     return "";
   }
 }
 
-// Bouw volledige e-mail HTML
+// Bouw volledige mail HTML
 async function buildEmailHTML() {
   let leaguesHTML = "";
   for (const league of competitions) {
@@ -88,7 +93,7 @@ Automatisch verzonden via GitHub Actions • TheSportsDB
 </html>`;
 }
 
-// Mail verzenden
+// Verzenden mail
 async function sendMail() {
   try {
     const html = await buildEmailHTML();
@@ -118,4 +123,3 @@ async function sendMail() {
 
 // Start script
 sendMail();
-
