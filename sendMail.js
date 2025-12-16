@@ -13,15 +13,20 @@ const clubs = [
   { name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Functie voor kleur van score
+// Nieuwe robuuste functie voor scorekleur
 function getScoreColor(match, clubName) {
-  const isHome = match.strHomeTeam === clubName;
+  const homeTeam = match.strHomeTeam?.trim();
+  const awayTeam = match.strAwayTeam?.trim();
   const homeScore = parseInt(match.intHomeScore);
   const awayScore = parseInt(match.intAwayScore);
 
+  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // geen score bekend = zwart
+
   if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
-  if ((isHome && homeScore > awayScore) || (!isHome && awayScore > homeScore)) return "#28a745"; // winst = groen
-  return "#dc3545"; // verlies = rood
+  if (homeTeam === clubName && homeScore > awayScore) return "#28a745"; // thuis gewonnen = groen
+  if (awayTeam === clubName && awayScore > homeScore) return "#28a745"; // uit gewonnen = groen
+
+  return "#dc3545"; // anders verlies = rood
 }
 
 async function getLastMatchHTML(club) {
@@ -149,7 +154,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met Olympique de Marseille toegevoegd en alle logo’s zichtbaar");
+  console.log("Nieuwsbrief verzonden met correcte kleuren en alle clubs zichtbaar");
 }
 
 sendMail();
