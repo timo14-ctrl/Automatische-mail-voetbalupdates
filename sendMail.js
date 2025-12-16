@@ -3,57 +3,51 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-const competitions = [
-  { name: "Jupiler Pro League", id: 4341 },
-  { name: "Eredivisie", id: 4337 },
-  { name: "Premier League", id: 4328 },
-  { name: "La Liga", id: 4335 },
-  { name: "Bundesliga", id: 4331 },
-  { name: "Serie A", id: 4332 }
+const clubs = [
+  { name: "Standard", league: "Jupiler Pro League" },
+  { name: "Aston Villa", league: "Premier League" },
+  { name: "AC Milan", league: "Serie A" },
+  { name: "FC Barcelona", league: "La Liga" },
+  { name: "Marseille", league: "Ligue 1" },
+  { name: "PSV", league: "Eredivisie" }
 ];
 
-async function getLeagueHTML(league) {
-  const res = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
+async function getLastMatchHTML(club) {
+  // 1️⃣ Zoek team ID
+  const teamRes = await fetch(
+    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
   );
-  const data = await res.json();
-  if (!data.events || data.events.length === 0) return "";
+  const teamData = await teamRes.json();
+  if (!teamData.teams || teamData.teams.length === 0) return "";
 
-  // Alleen afgewerkte wedstrijden
-  const finishedMatches = data.events.filter(
-    e => e.intHomeScore !== null && e.intAwayScore !== null
+  const teamId = teamData.teams[0].idTeam;
+
+  // 2️⃣ Haal laatste wedstrijd op
+  const matchRes = await fetch(
+    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${teamId}`
   );
+  const matchData = await matchRes.json();
+  if (!matchData.results || matchData.results.length === 0) return "";
 
-  if (finishedMatches.length === 0) return "";
+  const match = matchData.results[0];
 
-  // Meest recente speeldatum bepalen
-  const latestDate = finishedMatches
-    .map(e => e.dateEvent)
-    .sort()
-    .reverse()[0];
-
-  // ALLE matchen van die speeldatum
-  const matchesOfMatchday = finishedMatches.filter(
-    e => e.dateEvent === latestDate
-  );
-
-  if (matchesOfMatchday.length === 0) return "";
-
-  let html = `<h2>${league.name} – Wedstrijden van speeldag ${latestDate}</h2><ul>`;
-
-  matchesOfMatchday.forEach(m => {
-    html += `<li>${m.strHomeTeam} ${m.intHomeScore} - ${m.intAwayScore} ${m.strAwayTeam}</li>`;
-  });
-
-  html += `</ul>`;
-  return html;
+  return `
+    <h2>${club.name} (${club.league})</h2>
+    <p>
+      ${match.strHomeTeam} ${match.intHomeScore}
+      -
+      ${match.intAwayScore} ${match.strAwayTeam}
+      <br>
+      <small>${match.dateEvent}</small>
+    </p>
+  `;
 }
 
 async function sendMail() {
   let content = "";
 
-  for (const league of competitions) {
-    content += await getLeagueHTML(league);
+  for (const club of clubs) {
+    content += await getLastMatchHTML(club);
   }
 
   if (!content) {
@@ -73,18 +67,19 @@ async function sendMail() {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: process.env.EMAIL_TO,
-    subject: "Dit zijn de voetbaluitslagen van de voorbije speeldag!",
+    subject: "Dit zijn de laatste voetbaluitslagen van jouw clubs!",
     html: `
       <h1>VOETBAL ACTUEEL</h1>
       <p>
-        Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend.
-        Ontdek het hieronder!
+        Hey voetballiefhebber!  
+        Hier zijn de meest recente wedstrijden van jouw favoriete clubs.
       </p>
       ${content}
     `
   });
 
-  console.log("Mail verzonden met ALLE wedstrijden van de speeldag");
+  console.log("Mail verzonden met laatste clubwedstrijden");
 }
 
 sendMail();
+
