@@ -1,32 +1,30 @@
 const fetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 
-// API-key
 const API_KEY = "123";
 
-// Clubs met base64-logo's (alle PNG’s ingesloten)
+// Clubs met werkende HTTPS-PNG logo's
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
-  { name: "PSV Eindhoven", league: "Eredivisie", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
-  { name: "Aston Villa", league: "Premier League", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
-  { name: "AC Milan", league: "Serie A", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
-  { name: "FC Barcelona", league: "La Liga", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
-  { name: "Olympique Marseille", league: "Ligue 1", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." }
+  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/en/5/5e/Standard_Li%C3%A8ge_logo.png" },
+  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/en/4/4e/PSV_logo.png" },
+  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_2016.png" },
+  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.png" },
+  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.png" },
+  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/2/29/Olympique_Marseille_logo.png" }
 ];
 
-// Bepaal kleur voor score: groen=winst, rood=verlies, oranje=gelijk
+// Functie voor kleur van uitslag
 function getScoreColor(match, clubName) {
   const isHome = match.strHomeTeam === clubName;
   const homeScore = parseInt(match.intHomeScore);
   const awayScore = parseInt(match.intAwayScore);
 
-  if (homeScore === awayScore) return "#FFA500"; // oranje
-  if ((isHome && homeScore > awayScore) || (!isHome && awayScore > homeScore)) return "#28a745"; // groen
-  return "#dc3545"; // rood
+  if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
+  if ((isHome && homeScore > awayScore) || (!isHome && awayScore > homeScore)) return "#28a745"; // winst = groen
+  return "#dc3545"; // verlies = rood
 }
 
 async function getLastMatchHTML(club) {
-  // Zoek team ID
   const teamRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/searchteams.php?t=${encodeURIComponent(club.name)}`
   );
@@ -37,7 +35,6 @@ async function getLastMatchHTML(club) {
   const teamId = team.idTeam;
   const logo = club.logo || team.strTeamBadge || "https://via.placeholder.com/50";
 
-  // Laatste gespeelde wedstrijd
   const matchRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${teamId}`
   );
@@ -152,7 +149,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Professionele nieuwsbrief verzonden met alle logo’s zichtbaar");
+  console.log("Professionele nieuwsbrief verzonden met alle logo’s zichtbaar via HTTPS-PNG's");
 }
 
 sendMail();
