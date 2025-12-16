@@ -6,46 +6,38 @@ const API_KEY = "123";
 const competitions = [
   { name: "Jupiler Pro League", id: 4341 },
   { name: "Eredivisie", id: 4337 },
-  { name: "Premier League", id: 4328 }
+  { name: "Premier League", id: 4328 },
+  { name: "La Liga", id: 4335 },
+  { name: "Bundesliga", id: 4331 },
+  { name: "Serie A", id: 4332 }
 ];
 
 async function getLeagueHTML(league) {
   const res = await fetch(
-    "https://www.thesportsdb.com/api/v1/json/" +
-      API_KEY +
-      "/eventspastleague.php?id=" +
-      league.id
+    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
   );
-
   const data = await res.json();
-  if (!data.events) return "";
+  if (!data.events || data.events.length === 0) return "";
 
-  // laatste gespeelde speeldag via strRound
-  const latest = data.events
-    .filter(e => e.strRound && e.dateEvent)
-    .sort((a, b) => new Date(b.dateEvent) - new Date(a.dateEvent))[0];
+  // 👉 laatste speeldag bepalen via LAATSTE strRound in de lijst
+  const rounds = data.events
+    .map(e => e.strRound)
+    .filter(r => r);
 
-  if (!latest) return "";
+  if (rounds.length === 0) return "";
 
-  const round = latest.strRound;
-  const matches = data.events.filter(e => e.strRound === round);
+  const lastRound = rounds[0]; // API komt gesorteerd terug (meest recent eerst)
 
-  let html = "<h2>" + league.name + " - " + round + "</h2><ul>";
+  const matches = data.events.filter(e => e.strRound === lastRound);
+  if (matches.length === 0) return "";
+
+  let html = `<h2>${league.name} - ${lastRound}</h2><ul>`;
 
   matches.forEach(m => {
-    html +=
-      "<li>" +
-      m.strHomeTeam +
-      " " +
-      m.intHomeScore +
-      " - " +
-      m.intAwayScore +
-      " " +
-      m.strAwayTeam +
-      "</li>";
+    html += `<li>${m.strHomeTeam} ${m.intHomeScore} - ${m.intAwayScore} ${m.strAwayTeam}</li>`;
   });
 
-  html += "</ul>";
+  html += `</ul>`;
   return html;
 }
 
@@ -54,6 +46,10 @@ async function sendMail() {
 
   for (const league of competitions) {
     content += await getLeagueHTML(league);
+  }
+
+  if (!content) {
+    content = "<p>Geen wedstrijden gevonden.</p>";
   }
 
   const transporter = nodemailer.createTransport({
@@ -70,13 +66,14 @@ async function sendMail() {
     from: process.env.EMAIL_USER,
     to: process.env.EMAIL_TO,
     subject: "Dit zijn de voetbaluitslagen van de voorbije speeldag!",
-    html:
-      "<h1>VOETBAL ACTUEEL</h1>" +
-      "<p>Hey voetballiefhebber! Wij geven je een wekelijkse update.</p>" +
-      content
+    html: `
+      <h1>VOETBAL ACTUEEL</h1>
+      <p>Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend.</p>
+      ${content}
+    `
   });
 
-  console.log("Mail verzonden");
+  console.log("Mail verzonden met inhoud");
 }
 
 sendMail();
