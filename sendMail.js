@@ -3,17 +3,17 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Clubs met werkende HTTPS-PNG logo's
+// Clubs met logo's via jouw GitHub repo (root)
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/en/5/5e/Standard_Li%C3%A8ge_logo.png" },
-  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/en/4/4e/PSV_logo.png" },
-  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_2016.png" },
-  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.png" },
-  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.png" },
-  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/2/29/Olympique_Marseille_logo.png" }
+  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/standard.png" },
+  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/psv.png" },
+  { name: "Aston Villa", league: "Premier League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
+  { name: "AC Milan", league: "Serie A", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
+  { name: "FC Barcelona", league: "La Liga", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
+  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Functie voor kleur van uitslag
+// Functie voor kleur van score
 function getScoreColor(match, clubName) {
   const isHome = match.strHomeTeam === clubName;
   const homeScore = parseInt(match.intHomeScore);
@@ -149,7 +149,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Professionele nieuwsbrief verzonden met alle logo’s zichtbaar via HTTPS-PNG's");
+  console.log("Nieuwsbrief verzonden met logo’s via GitHub in de root");
 }
 
 sendMail();
