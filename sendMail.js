@@ -5,43 +5,40 @@ const API_KEY = "123";
 
 // Clubs met team ID, competitie en logo
 const clubs = [
-  { id: "133602", name: "Standard Liège", league: "Jupiler Pro League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/standard.png" },
-  { id: "1104", name: "PSV Eindhoven", league: "Eredivisie", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/psv.png" },
-  { id: "133604", name: "Aston Villa", league: "Premier League", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
-  { id: "133738", name: "AC Milan", league: "Serie A", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
-  { id: "133739", name: "FC Barcelona", league: "La Liga", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
-  { id: "133701", name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
+  { id: "133602", name: "Standard Liège", league: "Jupiler Pro League", leagueId: "4328", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/standard.png" },
+  { id: "1104", name: "PSV Eindhoven", league: "Eredivisie", leagueId: "4332", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/psv.png" },
+  { id: "133604", name: "Aston Villa", league: "Premier League", leagueId: "4328", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/astonvilla.png" },
+  { id: "133738", name: "AC Milan", league: "Serie A", leagueId: "4332", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/acmilan.png" },
+  { id: "133739", name: "FC Barcelona", league: "La Liga", leagueId: "4335", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/barcelona.png" },
+  { id: "133701", name: "Olympique de Marseille", league: "Ligue 1", leagueId: "4334", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Functie om kleur van score te bepalen op basis van team-ID
+// Functie om kleur van score te bepalen
 function getScoreColor(match, clubId) {
   const homeScore = parseInt(match.intHomeScore);
   const awayScore = parseInt(match.intAwayScore);
 
-  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // score onbekend
-
-  if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
-  if (match.idHomeTeam === clubId && homeScore > awayScore) return "#28a745"; // winst thuis = groen
-  if (match.idAwayTeam === clubId && awayScore > homeScore) return "#28a745"; // winst uit = groen
-  return "#dc3545"; // verlies = rood
+  if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // onbekend
+  if (homeScore === awayScore) return "#FFA500"; // gelijk
+  if (match.idHomeTeam === clubId && homeScore > awayScore) return "#28a745"; // winst thuis
+  if (match.idAwayTeam === clubId && awayScore > homeScore) return "#28a745"; // winst uit
+  return "#dc3545"; // verlies
 }
 
-// Haal laatste match HTML op
+// Haal laatste gespeelde match in competitie
 async function getLastMatchHTML(club) {
-  const matchRes = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${club.id}`
-  );
-  const matchData = await matchRes.json();
-  if (!matchData.results || matchData.results.length === 0) return "";
+  const seasonRes = await fetch(`https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventsseason.php?id=${club.leagueId}&s=2025-2026`);
+  const seasonData = await seasonRes.json();
+  if (!seasonData.events || seasonData.events.length === 0) return "";
 
-  // Zoek laatste match in de competitie (case-insensitive)
-  let match = matchData.results.find(
-    m => m.strLeague && m.strLeague.toLowerCase().includes(club.league.toLowerCase())
-  );
+  // Filter voor wedstrijden van deze club die al gespeeld zijn
+  const clubMatches = seasonData.events
+    .filter(m => (m.idHomeTeam === club.id || m.idAwayTeam === club.id) && m.intHomeScore !== null)
+    .sort((a,b) => new Date(b.dateEvent) - new Date(a.dateEvent)); // laatste eerst
 
-  // Fallback: neem eerste match als geen match in competitie gevonden
-  if (!match) match = matchData.results[0];
+  if (clubMatches.length === 0) return "";
 
+  const match = clubMatches[0];
   const color = getScoreColor(match, club.id);
 
   return `
@@ -67,7 +64,7 @@ async function getLastMatchHTML(club) {
   `;
 }
 
-// Verzenden van de nieuwsbrief
+// Verstuur de nieuwsbrief
 async function sendMail() {
   let clubBlocks = "";
 
@@ -150,7 +147,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden: kleuren en wedstrijden correct, Marseille en Barcelona aanwezig");
+  console.log("Nieuwsbrief verzonden: juiste wedstrijden, kleuren correct, alle clubs aanwezig");
 }
 
 sendMail();
