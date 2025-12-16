@@ -56,4 +56,27 @@ async function sendMail() {
     content += await getLeagueHTML(league);
   }
 
-  const transporter =
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: process.env.EMAIL_TO,
+    subject: "Dit zijn de voetbaluitslagen van de voorbije speeldag!",
+    html:
+      "<h1>VOETBAL ACTUEEL</h1>" +
+      "<p>Hey voetballiefhebber! Wij geven je een wekelijkse update.</p>" +
+      content
+  });
+
+  console.log("Mail verzonden");
+}
+
+sendMail();
