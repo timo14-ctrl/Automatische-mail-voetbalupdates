@@ -3,30 +3,57 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Competities (Jupiler Pro League eerst)
 const competitions = [
-  { name: "Jupiler Pro League", id: 4341, color: "#ffcc00" },
-  { name: "Eredivisie", id: 4337, color: "#da291c" },
-  { name: "Premier League", id: 4328, color: "#1b458f" },
-  { name: "La Liga", id: 4335, color: "#f1bf00" },
-  { name: "Bundesliga", id: 4331, color: "#e2001a" },
-  { name: "Serie A", id: 4332, color: "#0066b3" }
+  { name: "Jupiler Pro League", id: 4341 },
+  { name: "Eredivisie", id: 4337 },
+  { name: "Premier League", id: 4328 }
 ];
 
 async function getLeagueHTML(league) {
-  try {
-    const response = await fetch(
-      `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
-    );
+  const res = await fetch(
+    "https://www.thesportsdb.com/api/v1/json/" +
+      API_KEY +
+      "/eventspastleague.php?id=" +
+      league.id
+  );
 
-    if (!response.ok) return "";
+  const data = await res.json();
+  if (!data.events) return "";
 
-    const data = await response.json();
-    if (!data.events || data.events.length === 0) return "";
+  // laatste gespeelde speeldag via strRound
+  const latest = data.events
+    .filter(e => e.strRound && e.dateEvent)
+    .sort((a, b) => new Date(b.dateEvent) - new Date(a.dateEvent))[0];
 
-    // Laatst gespeelde speeldag bepalen via strRound
-    const latestEvent = data.events
-      .filter(e => e.strRound && e.dateEvent)
-      .sort((a, b) => new Date(b.dateEvent) - new Date(a.dateEvent))[0];
+  if (!latest) return "";
 
-    if
+  const round = latest.strRound;
+  const matches = data.events.filter(e => e.strRound === round);
+
+  let html = "<h2>" + league.name + " - " + round + "</h2><ul>";
+
+  matches.forEach(m => {
+    html +=
+      "<li>" +
+      m.strHomeTeam +
+      " " +
+      m.intHomeScore +
+      " - " +
+      m.intAwayScore +
+      " " +
+      m.strAwayTeam +
+      "</li>";
+  });
+
+  html += "</ul>";
+  return html;
+}
+
+async function sendMail() {
+  let content = "";
+
+  for (const league of competitions) {
+    content += await getLeagueHTML(league);
+  }
+
+  const transporter =
