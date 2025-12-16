@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 
 const API_KEY = "123";
 
-// Competities met Jupiler Pro League eerst
+// Jupiler Pro League altijd eerst
 const competitions = [
   { name: "Jupiler Pro League", id: 4341, color: "#ffcc00" },
   { name: "Eredivisie", id: 4337, color: "#da291c" },
@@ -13,112 +13,56 @@ const competitions = [
   { name: "Serie A", id: 4332, color: "#0066b3" }
 ];
 
-// HTML per competitie met alle wedstrijden van de laatste speeldag
 async function getLeagueHTML(league) {
   try {
-    const res = await fetch(`https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`);
+    const res = await fetch(
+      `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
+    );
     if (!res.ok) return "";
     const data = await res.json();
-    if (!data.events) return "";
+    if (!data.events || data.events.length === 0) return "";
 
-    // Bepaal de laatste ronde die een nummer heeft
-    const rounds = data.events
-      .filter(e => e.intRound)
-      .map(e => parseInt(e.intRound))
-      .filter(r => !isNaN(r));
+    // ➜ Neem het MEEST RECENTE event
+    const latestEvent = data.events
+      .filter(e => e.strRound)
+      .sort((a, b) => new Date(b.dateEvent) - new Date(a.dateEvent))[0];
 
-    if (rounds.length === 0) return "";
+    if (!latestEvent) return "";
 
-    const lastRound = Math.max(...rounds);
+    const roundName = latestEvent.strRound;
 
-    // Alle wedstrijden van die ronde
-    const matches = data.events.filter(e => parseInt(e.intRound) === lastRound);
+    // ➜ ALLE wedstrijden van die speeldag
+    const matches = data.events.filter(e => e.strRound === roundName);
 
     if (matches.length === 0) return "";
 
-    let html = `<tr>
+    let html = `
+<tr>
 <td style="padding:15px 0;">
 <h2 style="margin:0;padding:10px;background:${league.color};color:#ffffff;border-radius:5px;text-align:center;font-family:Arial,sans-serif;">
-${league.name} – Speeldag ${lastRound}
+${league.name} – ${roundName}
 </h2>
-<table width="100%" cellpadding="6" cellspacing="0" style="font-family:Arial,sans-serif;margin-top:5px;">`;
+<table width="100%" cellpadding="6" cellspacing="0" style="font-family:Arial,sans-serif;margin-top:5px;">
+`;
 
     matches.forEach(match => {
-      html += `<tr>
-<td style="border-bottom:1px solid #ddd;padding:5px 0;">
+      html += `
+<tr>
+<td style="border-bottom:1px solid #ddd;padding:6px 0;">
 ${match.strHomeTeam} ${match.intHomeScore} - ${match.intAwayScore} ${match.strAwayTeam}
 </td>
 </tr>`;
     });
 
-    html += `</table></td></tr>`;
+    html += `
+</table>
+</td>
+</tr>`;
+
     return html;
-
   } catch (err) {
-    console.error("Fout bij league HTML:", league.name, err);
-    return "";
-  }
-}
+    console.error("Fou
 
-// Bouw volledige mail HTML
-async function buildEmailHTML() {
-  let leaguesHTML = "";
-  for (const league of competitions) {
-    leaguesHTML += await getLeagueHTML(league);
-  }
-
-  return `<html>
-<body style="margin:0;padding:0;background:#f4f6f8;">
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr><td align="center">
-<table width="600" cellpadding="20" cellspacing="0" style="background:#ffffff;font-family:Arial,sans-serif;border-radius:10px;">
-<tr>
-<td style="background:#0b3d91;color:#ffffff;text-align:center;border-radius:10px 10px 0 0;">
-<h1 style="margin:0;padding:10px;">⚽ VOETBAL ACTUEEL</h1>
-<p style="margin:5px 0 10px;font-size:14px;">Hey voetballiefhebber! Wij geven je een wekelijkse update van het voorbije voetbalweekend. Ontdek het hieronder!</p>
-</td>
-</tr>
-
-${leaguesHTML}
-
-<tr>
-<td style="text-align:center;font-size:12px;color:#666;padding-top:20px;border-top:1px solid #ddd;">
-Automatisch verzonden via GitHub Actions • TheSportsDB
-</td>
-</tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
-}
-
-// Verzenden mail
-async function sendMail() {
-  try {
-    const html = await buildEmailHTML();
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT),
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
-    await transporter.sendMail({
-      from: `"VOETBAL ACTUEEL" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_TO,
-      subject: "Dit zijn de voetbaluitslagen van de voorbije speeldag!",
-      html
-    });
-
-    console.log("Mail verzonden");
-  } catch (err) {
-    console.error("Fout bij verzenden mail:", err);
-    process.exit(1);
-  }
 }
 
 // Start script
