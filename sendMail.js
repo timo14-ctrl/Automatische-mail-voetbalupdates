@@ -12,33 +12,31 @@ const competitions = [
   { name: "Serie A", id: 4332 }
 ];
 
+// datum X dagen geleden
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
+}
+
 async function getLeagueHTML(league) {
   const res = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventspastleague.php?id=${league.id}`
   );
   const data = await res.json();
-  if (!data.events || data.events.length === 0) return "";
+  if (!data.events) return "";
 
-  // Tel hoe vaak elke strRound voorkomt
-  const roundCount = {};
-  data.events.forEach(e => {
-    if (e.strRound) {
-      roundCount[e.strRound] = (roundCount[e.strRound] || 0) + 1;
-    }
+  const oneWeekAgo = daysAgo(7);
+
+  // ➜ alle matchen van de laatste 7 dagen
+  const matches = data.events.filter(e => {
+    if (!e.dateEvent) return false;
+    return new Date(e.dateEvent) >= oneWeekAgo;
   });
 
-  const rounds = Object.keys(roundCount);
-  if (rounds.length === 0) return "";
-
-  // Neem de speeldag met de meeste wedstrijden
-  const bestRound = rounds.sort(
-    (a, b) => roundCount[b] - roundCount[a]
-  )[0];
-
-  const matches = data.events.filter(e => e.strRound === bestRound);
   if (matches.length === 0) return "";
 
-  let html = `<h2>${league.name} - ${bestRound}</h2><ul>`;
+  let html = `<h2>${league.name} – Wedstrijden van de voorbije speeldag</h2><ul>`;
 
   matches.forEach(m => {
     html += `<li>${m.strHomeTeam} ${m.intHomeScore} - ${m.intAwayScore} ${m.strAwayTeam}</li>`;
@@ -56,7 +54,7 @@ async function sendMail() {
   }
 
   if (!content) {
-    content = "<p>Geen wedstrijden gevonden.</p>";
+    content = "<p>Geen wedstrijden gespeeld in de voorbije week.</p>";
   }
 
   const transporter = nodemailer.createTransport({
@@ -86,3 +84,4 @@ async function sendMail() {
 }
 
 sendMail();
+
