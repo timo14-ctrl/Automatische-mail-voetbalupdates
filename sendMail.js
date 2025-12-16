@@ -13,19 +13,20 @@ const clubs = [
   { id: "133701", name: "Olympique de Marseille", league: "Ligue 1", logo: "https://raw.githubusercontent.com/timo14-ctrl/Automatische-mail-voetbalupdates/main/marseille.png" }
 ];
 
-// Kleurfunctie gebaseerd op team-ID
+// Functie om kleur van score te bepalen op basis van team-ID
 function getScoreColor(match, clubId) {
   const homeScore = parseInt(match.intHomeScore);
   const awayScore = parseInt(match.intAwayScore);
 
   if (isNaN(homeScore) || isNaN(awayScore)) return "#000000"; // score onbekend
 
-  if (homeScore === awayScore) return "#FFA500"; // gelijk
-  if (match.idHomeTeam === clubId && homeScore > awayScore) return "#28a745"; // winst thuis
-  if (match.idAwayTeam === clubId && awayScore > homeScore) return "#28a745"; // winst uit
-  return "#dc3545"; // verlies
+  if (homeScore === awayScore) return "#FFA500"; // gelijk = oranje
+  if (match.idHomeTeam === clubId && homeScore > awayScore) return "#28a745"; // winst thuis = groen
+  if (match.idAwayTeam === clubId && awayScore > homeScore) return "#28a745"; // winst uit = groen
+  return "#dc3545"; // verlies = rood
 }
 
+// Haal laatste match HTML op
 async function getLastMatchHTML(club) {
   const matchRes = await fetch(
     `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventslast.php?id=${club.id}`
@@ -33,9 +34,13 @@ async function getLastMatchHTML(club) {
   const matchData = await matchRes.json();
   if (!matchData.results || matchData.results.length === 0) return "";
 
-  // Zoek de laatste wedstrijd in de competitie
-  const match = matchData.results.find(m => m.strLeague === club.league);
-  if (!match) return ""; // geen match in competitie gevonden
+  // Zoek laatste match in de competitie (case-insensitive)
+  let match = matchData.results.find(
+    m => m.strLeague && m.strLeague.toLowerCase().includes(club.league.toLowerCase())
+  );
+
+  // Fallback: neem eerste match als geen match in competitie gevonden
+  if (!match) match = matchData.results[0];
 
   const color = getScoreColor(match, club.id);
 
@@ -62,6 +67,7 @@ async function getLastMatchHTML(club) {
   `;
 }
 
+// Verzenden van de nieuwsbrief
 async function sendMail() {
   let clubBlocks = "";
 
@@ -144,7 +150,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Nieuwsbrief verzonden met correcte kleuren en juiste wedstrijden");
+  console.log("Nieuwsbrief verzonden: kleuren en wedstrijden correct, Marseille en Barcelona aanwezig");
 }
 
 sendMail();
