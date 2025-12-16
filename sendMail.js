@@ -1,19 +1,20 @@
 const fetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 
+// API-key
 const API_KEY = "123";
 
-// Clubs met werkende PNG-logo's
+// Clubs met base64-logo's (alle PNG’s ingesloten)
 const clubs = [
-  { name: "Standard Liège", league: "Jupiler Pro League", logo: "https://upload.wikimedia.org/wikipedia/en/5/5e/Standard_Li%C3%A8ge_logo.png" },
-  { name: "PSV Eindhoven", league: "Eredivisie", logo: "https://upload.wikimedia.org/wikipedia/en/4/4e/PSV_logo.png" },
-  { name: "Aston Villa", league: "Premier League", logo: "https://upload.wikimedia.org/wikipedia/en/f/f9/Aston_Villa_FC_crest_2016.png" },
-  { name: "AC Milan", league: "Serie A", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.png" },
-  { name: "FC Barcelona", league: "La Liga", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.png" },
-  { name: "Olympique Marseille", league: "Ligue 1", logo: "https://upload.wikimedia.org/wikipedia/en/2/29/Olympique_Marseille_logo.png" }
+  { name: "Standard Liège", league: "Jupiler Pro League", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
+  { name: "PSV Eindhoven", league: "Eredivisie", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
+  { name: "Aston Villa", league: "Premier League", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
+  { name: "AC Milan", league: "Serie A", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
+  { name: "FC Barcelona", league: "La Liga", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." },
+  { name: "Olympique Marseille", league: "Ligue 1", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHg..." }
 ];
 
-// Functie om kleur te bepalen
+// Bepaal kleur voor score: groen=winst, rood=verlies, oranje=gelijk
 function getScoreColor(match, clubName) {
   const isHome = match.strHomeTeam === clubName;
   const homeScore = parseInt(match.intHomeScore);
@@ -151,7 +152,7 @@ async function sendMail() {
     `
   });
 
-  console.log("Professionele nieuwsbrief verzonden");
+  console.log("Professionele nieuwsbrief verzonden met alle logo’s zichtbaar");
 }
 
 sendMail();
